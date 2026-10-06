@@ -1,33 +1,25 @@
 mod cli;
 mod data;
+mod db;
 mod errors;
 mod logic;
 mod models;
 
-use models::{District, Truck};
+#[tokio::main]
+async fn main() {
+    dotenvy::dotenv().ok();
 
-fn main() {
-    let mut fleet = data::seed_fleet();
-
-    let new_truck = Truck {
-        id: "TT-0050".to_string(),
-        driver: "Funke Adebayo".to_string(),
-        manager: "Mrs. Ngozi Eze".to_string(),
-        district: District::Ikeja,
-        street: "Allen Avenue".to_string(),
-        first_house: 101,
-        last_house: 150,
-        shift_start: 6,
-        shift_end: 14,
-        lane: 2,
+    let pool = match db::connect().await {
+        Ok(pool) => pool,
+        Err(error) => {
+            eprintln!("Could not connect to the database: {error}");
+            return;
+        }
     };
 
-    match logic::add_truck(&mut fleet, new_truck) {
-        Ok(()) => println!("Truck added."),
-        Err(error) => println!("Could not add truck: {error}"),
-    }
+    println!("Connected. Migrations applied.");
 
-    if let Err(error) = cli::run(&fleet) {
+    if let Err(error) = cli::run(&pool).await {
         eprintln!("Fatal error: {error}");
     }
 }

@@ -1,8 +1,9 @@
 use std::io;
 
+use sqlx::PgPool;
+
+use crate::data;
 use crate::errors::TruckError;
-use crate::logic;
-use crate::models::Truck;
 
 fn prompt(message: &str) -> Result<String, TruckError> {
     println!("{message}");
@@ -11,13 +12,13 @@ fn prompt(message: &str) -> Result<String, TruckError> {
     Ok(input.trim().to_string())
 }
 
-fn prompt_number(message: &str) -> Result<u32, TruckError> {
+fn prompt_number(message: &str) -> Result<i32, TruckError> {
     let text = prompt(message)?;
-    let number = text.parse::<u32>()?;
+    let number = text.parse::<i32>()?;
     Ok(number)
 }
 
-pub fn run(fleet: &[Truck]) -> Result<(), TruckError> {
+pub async fn run(pool: &PgPool) -> Result<(), TruckError> {
     loop {
         let street = prompt("Enter street (or 'quit'):")?;
         if street.eq_ignore_ascii_case("quit") {
@@ -33,18 +34,17 @@ pub fn run(fleet: &[Truck]) -> Result<(), TruckError> {
             Err(other) => return Err(other),
         };
 
-        match logic::find_truck(fleet, &street, house) {
-            Some(truck) => println!(
-                "{} | {} (mgr: {}) | {:?} | lane {} | {} | shift {}:00-{}:00 ({} hrs)",
-                truck.id,
-                truck.driver,
-                truck.manager,
-                truck.district,
-                truck.lane,
-                truck.district.collection_day(),
-                truck.shift_start,
-                truck.shift_end,
-                truck.shift_length()
+        match data::find_route(pool, &street, house).await? {
+            Some(r) => println!(
+                "{} | driver: {} | supervisor: {} | {} ({}) | lane {} | shift {}:00-{}:00",
+                r.fleet_code,
+                r.driver.as_deref().unwrap_or("Unassigned"),
+                r.supervisor.as_deref().unwrap_or("Unassigned"),
+                r.district,
+                r.collection_day,
+                r.lane,
+                r.shift_start,
+                r.shift_end
             ),
             None => println!("No truck covers house {house} on {street}."),
         }

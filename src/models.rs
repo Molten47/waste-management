@@ -34,3 +34,18 @@ impl Truck {
         (self.shift_end + 24 - self.shift_start) % 24
     }
 }
+
+#[derive(Debug, sqlx::FromRow)]
+pub struct RouteInfo {
+    pub fleet_code: String,
+    pub driver: Option<String>,
+    pub supervisor: Option<String>,
+    pub district: String,
+    pub collection_day: String,
+    pub street: String,
+    pub lane: i16,
+    pub first_house: i32,
+    pub last_house: i32,
+    pub shift_start: i16,
+    pub shift_end: i16,
+}

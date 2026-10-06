@@ -10,6 +10,7 @@ pub enum TruckError {
     DuplicateId,
     InvalidNumber(ParseIntError),
     Input(io::Error),
+    Database(sqlx::Error),
 }
 
 impl fmt::Display for TruckError {
@@ -21,6 +22,7 @@ impl fmt::Display for TruckError {
             TruckError::DuplicateId => write!(f, "a truck with that id already exists"),
             TruckError::InvalidNumber(e) => write!(f, "invalid number: {e}"),
             TruckError::Input(e) => write!(f, "input error: {e}"),
+            TruckError::Database(e) =>write!(f, "database error: {e}"),
         }
     }
 }
@@ -34,5 +36,11 @@ impl From<ParseIntError> for TruckError {
 impl From<io::Error> for TruckError {
     fn from(error: io::Error) -> Self {
         TruckError::Input(error)
+    }
+}
+
+impl From<sqlx::Error> for TruckError {
+    fn from( error: sqlx::Error)-> Self{
+        TruckError::Database(error)
     }
 }
