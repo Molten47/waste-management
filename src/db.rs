@@ -1,4 +1,4 @@
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 
 pub async fn connect() -> Result<PgPool, Box<dyn std::error::Error>> {
     let url = std::env::var("DATABASE_URL")?;

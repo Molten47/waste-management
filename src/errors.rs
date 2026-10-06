@@ -22,7 +22,7 @@ impl fmt::Display for TruckError {
             TruckError::DuplicateId => write!(f, "a truck with that id already exists"),
             TruckError::InvalidNumber(e) => write!(f, "invalid number: {e}"),
             TruckError::Input(e) => write!(f, "input error: {e}"),
-            TruckError::Database(e) =>write!(f, "database error: {e}"),
+            TruckError::Database(e) => write!(f, "database error: {e}"),
         }
     }
 }
@@ -40,7 +40,7 @@ impl From<io::Error> for TruckError {
 }
 
 impl From<sqlx::Error> for TruckError {
-    fn from( error: sqlx::Error)-> Self{
+    fn from(error: sqlx::Error) -> Self {
         TruckError::Database(error)
     }
 }
