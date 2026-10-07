@@ -1,3 +1,4 @@
+mod api;
 mod cli;
 mod data;
 mod db;
@@ -5,9 +6,18 @@ mod errors;
 mod logic;
 mod models;
 
+use tower_http::trace::TraceLayer;
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
+
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info,tower_http=debug".into()),
+        )
+        .init();
 
     let pool = match db::connect().await {
         Ok(pool) => pool,
@@ -17,9 +27,9 @@ async fn main() {
         }
     };
 
-    println!("Connected. Migrations applied.");
+    let app = api::router(pool).layer(TraceLayer::new_for_http());
 
-    if let Err(error) = cli::run(&pool).await {
-        eprintln!("Fatal error: {error}");
-    }
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    tracing::info!("listening on http://localhost:3000");
+    axum::serve(listener, app).await.unwrap();
 }

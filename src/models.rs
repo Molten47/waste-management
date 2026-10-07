@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum District {
     Ikeja,
@@ -35,7 +37,7 @@ impl Truck {
     }
 }
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, sqlx::FromRow, serde::Serialize)]
 pub struct RouteInfo {
     pub fleet_code: String,
     pub driver: Option<String>,
