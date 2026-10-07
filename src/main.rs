@@ -5,6 +5,7 @@ mod db;
 mod errors;
 mod logic;
 mod models;
+mod password;
 
 use tower_http::trace::TraceLayer;
 
