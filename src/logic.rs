@@ -26,9 +26,7 @@ pub fn add_truck(fleet: &mut Vec<Truck>, truck: Truck) -> Result<(), TruckError>
     Ok(())
 }
 
-
 /* TEST LOGIC.RS */
-
 
 #[cfg(test)]
 mod tests {

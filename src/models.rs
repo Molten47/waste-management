@@ -50,9 +50,6 @@ pub struct RouteInfo {
     pub shift_end: i16,
 }
 
-
-
-
 /* TESTS FOR MODELS.RS */
 
 #[cfg(test)]
