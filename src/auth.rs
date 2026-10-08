@@ -107,7 +107,7 @@ pub enum Role {
 }
 
 impl Role {
-    fn parse(s: &str) -> Option<Role> {
+    pub fn parse(s: &str) -> Option<Role> {
         match s {
             "owner" => Some(Role::Owner),
             "admin" => Some(Role::Admin),
