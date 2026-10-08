@@ -1,8 +1,10 @@
+use crate::auth::{AuthUser, Role};
 use axum::{
     Json, Router,
     extract::{Query, State},
     routing::{get, post},
 };
+
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -35,5 +37,25 @@ pub fn router(pool: PgPool) -> Router {
         .route("/health", get(health))
         .route("/lookup", get(lookup))
         .route("/login", post(crate::auth::login))
+        .route("/me", get(me))
+        .route("/admin/ping", get(admin_ping))
         .with_state(pool)
+}
+
+#[derive(serde::Serialize)]
+struct MeResponse {
+    id: String,
+    role: Role,
+}
+
+async fn me(user: AuthUser) -> Json<MeResponse> {
+    Json(MeResponse {
+        id: user.id,
+        role: user.role,
+    })
+}
+
+async fn admin_ping(user: AuthUser) -> Result<&'static str, TruckError> {
+    user.require_any(&[Role::Owner, Role::Admin])?;
+    Ok("admin ok")
 }

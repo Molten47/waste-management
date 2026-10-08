@@ -1,16 +1,17 @@
-use sqlx::PgPool;
-
-use crate::password::hash_password;
-
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use axum::{Json, extract::State};
-use jsonwebtoken::{EncodingKey, Header, encode};
+use axum::{
+    Json,
+    extract::{FromRequestParts, State},
+    http::{header, request::Parts},
+};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 
 use crate::errors::TruckError;
-use crate::password::verify_password;
+use crate::password::{hash_password, verify_password};
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -94,6 +95,75 @@ struct LoginRow {
     role: String,
     password_hash: Option<String>,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    Owner,
+    Admin,
+    Hr,
+    Finance,
+    Supervisor,
+    Driver,
+}
+
+impl Role {
+    fn parse(s: &str) -> Option<Role> {
+        match s {
+            "owner" => Some(Role::Owner),
+            "admin" => Some(Role::Admin),
+            "hr" => Some(Role::Hr),
+            "finance" => Some(Role::Finance),
+            "supervisor" => Some(Role::Supervisor),
+            "driver" => Some(Role::Driver),
+            _ => None,
+        }
+    }
+}
+
+/// Add this as a handler argument and the route requires a valid token.
+pub struct AuthUser {
+    pub id: String,
+    pub role: Role,
+}
+
+impl AuthUser {
+    pub fn require_any(&self, allowed: &[Role]) -> Result<(), TruckError> {
+        if allowed.contains(&self.role) {
+            Ok(())
+        } else {
+            Err(TruckError::Forbidden)
+        }
+    }
+}
+
+impl<S: Send + Sync> FromRequestParts<S> for AuthUser {
+    type Rejection = TruckError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, TruckError> {
+        let header = parts
+            .headers
+            .get(header::AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .ok_or(TruckError::Unauthorized)?;
+        let token = header
+            .strip_prefix("Bearer ")
+            .ok_or(TruckError::Unauthorized)?;
+
+        // Validation::default() is HS256 and checks the `exp` claim for us.
+        let data = decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(jwt_secret().as_bytes()),
+            &Validation::default(),
+        )
+        .map_err(|_| TruckError::Unauthorized)?;
+
+        let role = Role::parse(&data.claims.role).ok_or(TruckError::Unauthorized)?;
+        Ok(AuthUser {
+            id: data.claims.sub,
+            role,
+        })
+    }
+}
 
 pub async fn login(
     State(pool): State<sqlx::PgPool>,
@@ -145,4 +215,32 @@ pub async fn login(
     .map_err(|e| TruckError::Internal(e.to_string()))?;
 
     Ok(Json(LoginResponse { token, role }))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_known_roles() {
+        assert_eq!(Role::parse("owner"), Some(Role::Owner));
+        assert_eq!(Role::parse("supervisor"), Some(Role::Supervisor));
+    }
+
+    #[test]
+    fn unknown_role_is_rejected() {
+        assert_eq!(Role::parse("superuser"), None);
+    }
+
+    #[test]
+    fn require_any_checks_membership() {
+        let user = AuthUser {
+            id: "1".into(),
+            role: Role::Supervisor,
+        };
+        assert!(user.require_any(&[Role::Owner, Role::Supervisor]).is_ok());
+        assert!(matches!(
+            user.require_any(&[Role::Owner, Role::Admin]),
+            Err(TruckError::Forbidden)
+        ));
+    }
 }
