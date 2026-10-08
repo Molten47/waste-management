@@ -1,16 +1,19 @@
 mod api;
+mod auth;
 mod cli;
 mod data;
 mod db;
 mod errors;
 mod logic;
 mod models;
+mod password;
 
 use tower_http::trace::TraceLayer;
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
+    auth::jwt_secret(); // fail fast if JWT_SECRET is missing or too short
 
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -26,6 +29,10 @@ async fn main() {
             return;
         }
     };
+    if let Err(error) = auth::seed_owner(&pool).await {
+        eprintln!("Could not seed owner: {error}");
+        return;
+    }
 
     let app = api::router(pool).layer(TraceLayer::new_for_http());
 

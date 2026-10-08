@@ -17,6 +17,9 @@ pub enum TruckError {
     Input(io::Error),
     Database(sqlx::Error),
     NotFound,
+    Unauthorized,
+    Forbidden,
+    Internal(String),
 }
 
 impl fmt::Display for TruckError {
@@ -30,6 +33,9 @@ impl fmt::Display for TruckError {
             TruckError::Input(e) => write!(f, "input error: {e}"),
             TruckError::Database(e) => write!(f, "database error: {e}"),
             TruckError::NotFound => write!(f, "no truck covers that address"),
+            TruckError::Unauthorized => write!(f, "invalid credentials or token"),
+            TruckError::Forbidden => write!(f, "you do not have permission to do that"),
+            TruckError::Internal(e) => write!(f, "internal error: {e}"),
         }
     }
 }
@@ -64,7 +70,7 @@ impl IntoResponse for TruckError {
             }
             TruckError::DuplicateId => (StatusCode::CONFLICT, self.to_string()).into_response(),
             // Never leak database or I/O details to clients: log them, send a generic message.
-            TruckError::Database(_) | TruckError::Input(_) => {
+            TruckError::Database(_) | TruckError::Input(_) | TruckError::Internal(_) => {
                 tracing::error!("internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -72,6 +78,10 @@ impl IntoResponse for TruckError {
                 )
                     .into_response()
             }
+            TruckError::Unauthorized => {
+                (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
+            }
+            TruckError::Forbidden => (StatusCode::FORBIDDEN, self.to_string()).into_response(),
         }
     }
 }
