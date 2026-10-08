@@ -1,7 +1,7 @@
 use axum::{
     Json, Router,
     extract::{Query, State},
-    routing::get,
+    routing::{get, post},
 };
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -34,5 +34,6 @@ pub fn router(pool: PgPool) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/lookup", get(lookup))
+        .route("/login", post(crate::auth::login))
         .with_state(pool)
 }
