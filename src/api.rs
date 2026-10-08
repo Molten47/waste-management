@@ -39,6 +39,8 @@ pub fn router(pool: PgPool) -> Router {
         .route("/login", post(crate::auth::login))
         .route("/me", get(me))
         .route("/admin/ping", get(admin_ping))
+        .route("/users", post(crate::users::create_user))
+        .route("/activate", post(crate::users::activate))
         .with_state(pool)
 }
 

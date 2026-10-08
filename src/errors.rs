@@ -20,6 +20,8 @@ pub enum TruckError {
     Unauthorized,
     Forbidden,
     Internal(String),
+    InvalidInput(String),
+    Conflict(String),
 }
 
 impl fmt::Display for TruckError {
@@ -36,6 +38,8 @@ impl fmt::Display for TruckError {
             TruckError::Unauthorized => write!(f, "invalid credentials or token"),
             TruckError::Forbidden => write!(f, "you do not have permission to do that"),
             TruckError::Internal(e) => write!(f, "internal error: {e}"),
+            TruckError::InvalidInput(m) => write!(f, "{m}"),
+            TruckError::Conflict(m) => write!(f, "{m}"),
         }
     }
 }
@@ -82,6 +86,10 @@ impl IntoResponse for TruckError {
                 (StatusCode::UNAUTHORIZED, self.to_string()).into_response()
             }
             TruckError::Forbidden => (StatusCode::FORBIDDEN, self.to_string()).into_response(),
+            TruckError::InvalidInput(_) => {
+                (StatusCode::BAD_REQUEST, self.to_string()).into_response()
+            }
+            TruckError::Conflict(_) => (StatusCode::CONFLICT, self.to_string()).into_response(),
         }
     }
 }
