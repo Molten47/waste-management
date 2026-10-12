@@ -2,7 +2,7 @@ use crate::auth::{AuthUser, Role};
 use axum::{
     Json, Router,
     extract::{Query, State},
-    routing::{get, post},
+    routing::{get, post, put},
 };
 
 use serde::Deserialize;
@@ -41,6 +41,11 @@ pub fn router(pool: PgPool) -> Router {
         .route("/admin/ping", get(admin_ping))
         .route("/users", post(crate::users::create_user))
         .route("/activate", post(crate::users::activate))
+        .route("/trucks", get(crate::truck::list_trucks))
+        .route(
+            "/trucks/{fleet_code}/shift",
+            put(crate::truck::update_shift),
+        )
         .with_state(pool)
 }
 
