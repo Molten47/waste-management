@@ -22,6 +22,7 @@ pub enum TruckError {
     Internal(String),
     InvalidInput(String),
     Conflict(String),
+    NoSuchTruck,
 }
 
 impl fmt::Display for TruckError {
@@ -40,6 +41,7 @@ impl fmt::Display for TruckError {
             TruckError::Internal(e) => write!(f, "internal error: {e}"),
             TruckError::InvalidInput(m) => write!(f, "{m}"),
             TruckError::Conflict(m) => write!(f, "{m}"),
+            TruckError::NoSuchTruck => write!(f, "truck not found"),
         }
     }
 }
@@ -90,6 +92,7 @@ impl IntoResponse for TruckError {
                 (StatusCode::BAD_REQUEST, self.to_string()).into_response()
             }
             TruckError::Conflict(_) => (StatusCode::CONFLICT, self.to_string()).into_response(),
+            TruckError::NoSuchTruck => (StatusCode::NOT_FOUND, self.to_string()).into_response(),
         }
     }
 }
