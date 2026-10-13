@@ -46,6 +46,14 @@ pub fn router(pool: PgPool) -> Router {
             "/trucks/{fleet_code}/shift",
             put(crate::truck::update_shift),
         )
+        .route(
+            "/trucks/{fleet_code}/supervisor",
+            put(crate::assignment::assign_supervisor),
+        )
+        .route(
+            "/trucks/{fleet_code}/driver",
+            put(crate::assignment::assign_driver).delete(crate::assignment::unassign_driver),
+        )
         .with_state(pool)
 }
 

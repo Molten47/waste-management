@@ -18,7 +18,7 @@ pub struct TruckSummary {
 }
 
 /// None = may see every truck; Some(id) = only trucks supervised by that user.
-fn scope_for(user: &AuthUser) -> Option<String> {
+pub(crate) fn scope_for(user: &AuthUser) -> Option<String> {
     if user.role == Role::Supervisor {
         Some(user.id.clone())
     } else {

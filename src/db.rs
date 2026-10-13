@@ -5,7 +5,7 @@ pub async fn connect() -> Result<PgPool, Box<dyn std::error::Error>> {
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .acquire_timeout(std::time::Duration::from_secs(15))
+        .acquire_timeout(std::time::Duration::from_secs(30))
         .connect(&url)
         .await?;
 

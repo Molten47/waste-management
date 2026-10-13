@@ -1,4 +1,5 @@
 mod api;
+mod assignment;
 mod auth;
 mod cli;
 mod data;
