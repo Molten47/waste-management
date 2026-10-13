@@ -43,5 +43,5 @@ async fn main() {
         .await
         .unwrap();
     tracing::info!("listening on port {port}");
-   
+    axum::serve(listener, app).await.unwrap();
 }
