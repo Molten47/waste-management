@@ -38,8 +38,10 @@ async fn main() {
     }
 
     let app = api::router(pool).layer(TraceLayer::new_for_http());
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    tracing::info!("listening on http://localhost:3000");
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".into());
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
+        .await
+        .unwrap();
+    tracing::info!("listening on port {port}");
     axum::serve(listener, app).await.unwrap();
 }
