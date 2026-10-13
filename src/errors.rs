@@ -23,6 +23,9 @@ pub enum TruckError {
     InvalidInput(String),
     Conflict(String),
     NoSuchTruck,
+    NoSuchUser,
+    WrongRole,
+    DriverAlreadyAssigned,
 }
 
 impl fmt::Display for TruckError {
@@ -42,6 +45,11 @@ impl fmt::Display for TruckError {
             TruckError::InvalidInput(m) => write!(f, "{m}"),
             TruckError::Conflict(m) => write!(f, "{m}"),
             TruckError::NoSuchTruck => write!(f, "truck not found"),
+            TruckError::NoSuchUser => write!(f, "user not found"),
+            TruckError::WrongRole => write!(f, "user does not have the required role"),
+            TruckError::DriverAlreadyAssigned => {
+                write!(f, "driver is already assigned to another truck")
+            }
         }
     }
 }
@@ -92,7 +100,13 @@ impl IntoResponse for TruckError {
                 (StatusCode::BAD_REQUEST, self.to_string()).into_response()
             }
             TruckError::Conflict(_) => (StatusCode::CONFLICT, self.to_string()).into_response(),
-            TruckError::NoSuchTruck => (StatusCode::NOT_FOUND, self.to_string()).into_response(),
+            TruckError::NoSuchTruck | TruckError::NoSuchUser => {
+                (StatusCode::NOT_FOUND, self.to_string()).into_response()
+            }
+            TruckError::WrongRole => (StatusCode::BAD_REQUEST, self.to_string()).into_response(),
+            TruckError::DriverAlreadyAssigned => {
+                (StatusCode::CONFLICT, self.to_string()).into_response()
+            }
         }
     }
 }
